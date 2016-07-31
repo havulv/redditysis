@@ -5,7 +5,7 @@
 import os
 import time
 import re
-import json
+import csv
 import requests
 from BeautifulSoup import BeautifulSoup
 
@@ -17,7 +17,7 @@ def get_page_data(url):
     end_tag = re.compile('[^/]+(?=/$|$)')
     fname = end_tag.match(url)
     hdr = {'User-Agent' : 'Looking for content by /u/Sea_Wulf'}
-    page_data = {}
+    page_data = []
 
     req = requests.get(url, params=hdr)
     if req.status_code != 200:
@@ -34,15 +34,22 @@ def get_page_data(url):
             pass
         else:
             item = articles.find('p', {"class" : "title"})
-            page_data[rank.string] = (
-            vote.find('div', {"class" : "score unvoted"}).string,
+            page_data.append(int(rank.string),
+            int(vote.find('div', {"class" : "score unvoted"}).string),
             item.find('a').string,
             item.find('a').get('href'),
             item.find('span', {"class": "domain"}).find('a').get('href'))
 
     fpath = os.path.join(os.path.dirname(os.gecwd()), 'Redd_data')
-    with open(os.path.join(fpath,fname+"_data.json"), "ab") as save:
-        save.write("\n"+time.asctime()+"\n")
-        save.write(json.dumps(SearchPages))
+    f_name = os.path.join(fpath,fname+"_data.json")
+    head = re.compile("(Rank)")
+    with open(f_name, "rb") as check_head:
+        first = check_line.readline()
+
+    save = csv.writer(open(f_name, "ab"))
+    if not head.match(first):
+        save.writerow(["Rank", "Votes", "Title", "Link",
+    save.write("\n"+time.asctime()+"\n")
+    save.write(json.dumps(SearchPages))
 
 
