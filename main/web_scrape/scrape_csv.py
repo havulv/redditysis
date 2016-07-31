@@ -54,9 +54,10 @@ def get_page_data(url):
             dt.utcnow(),
             int(rank.string),
             int(vote.find('div', {"class" : "score unvoted"}).string),
-            item.find('a').string,
-            item.find('a').get('href'),
-            item.find('span', {"class": "domain"}).find('a').get('href')))
+            '\"'+item.find('a').string+'\"',
+            '\"'+item.find('a').get('href')'\"',
+            '\"'+item.find('span', {"class": "domain"}).find('a').get('href')
+                                                                        +'\"'))
 
     fpath = os.path.join(os.path.dirname(os.getcwd()), 'Redd_data')
     f_name = os.path.join(fpath,fname+"_data.csv")

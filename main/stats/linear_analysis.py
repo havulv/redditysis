@@ -316,6 +316,7 @@ if __name__ == '__main__':
     #try to open the data file.
     try:
         data_file = open(sys.argv[1])
+        data_file.close()
     except IndexError:
         Help()
         raise Exception('Please use a valid filename with a valid extension (i.e. .csv, .txt, etc.')
