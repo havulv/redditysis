@@ -1,27 +1,42 @@
 #!/usr/bin/python
 
 '''
-A platform for regression and analysis techniques built in Programming for Math & Science
-as offered by Fordham University and taught in the Spring of 2015  by Professors Abe
-Smith and Christine Papadakis.
+    A platform for regression and analysis techniques built in
+    Programming for Math & Science as offered by Fordham University
+    and taught in the Spring of 2015  by Professors Abe Smith and
+    Christine Papadakis.
 
-Author: John Andersen
-Orig. Date: 3/20/15
-Last Revised: 5/28/16
-    -- Documentation update
+    Author: John Andersen
+    Orig. Date: 3/20/15
 
-Currently no source control is used for this program.
-Hopefully, the code will be brought up to PEP 8 standards of maintenance
+    Functions:
+        Help()
+        F(M,t)
+        RSS(M, X, Y)
+        MM(X,Y)
+        covar(W)
+        fit(X,Y)
+        pca(W)
+        lasso(X,Y,t)
+        lasso_step(X,Y,bifurcations=20)
+        center(Array)
+        lasso_plot(tList, MList, name, tname='_', mname='_')
+        OneLasso(X,Y,TT)
+        DisplayEq(Model)
+        PlotAndExplain(X,Y,TMax,filename)
+
+    TODO:
+        logging
+        unittest
+        PEP 8 compliance
 '''
 
 
 from __future__ import print_function
 
-import re
+import re, sys
 import matplotlib
-#matplotlib.use('Agg')
 import numpy as np
-import sys
 import scipy.linalg as la
 import matplotlib.pyplot as plt
 import scipy.optimize as opt
@@ -32,29 +47,64 @@ def Help():
     '''
 
     name = './linear_analysis.py'
-    UsageList = [name, name + ' mydata.extension pca', name + ' mydata.extension fit n',
-                    name + ' mydata.extension lasso n', name + 'mydata.extension lasso n T']
-    Descrip = ['displays a helpful help message',
-'displays the singular values of the data, from greatest to least and shows the vector corresponding to the absolute greatest singular value',
-'prints the coefficents of the least squares linear fit of the data where column \'n\' is the dependent/response variable. This also prints the RSS of the model and the Fraction-of-Variance-Explained.',
-'Assuming column \'n\' is the dependent/response variable and the other columns are the independent/predictor variables, this runs lasso minimization for a range of t between 0 and the largest absolute value in transpose X*Y. This also prints a graph of how the coefficients vary with t and a graph of the Fraction-of-Variance-Explained, this returns the linear model given by lasso at a t= T.']
-    helpmessage = 'This is a program to analyze large sets of data and contains different tools to help with this. To efficiently and accurately use this tool you must have a data set (mydata.extension) and know which column to use as a dependent/response variable (i.e. column = n) \n \n'
+    UsageList = [
+            name,
+            name + ' mydata.extension pca',
+            name + ' mydata.extension fit n',
+            name + ' mydata.extension lasso n',
+            name + ' mydata.extension lasso n T']
+
+    Descrip = [
+            'displays a helpful help message',
+            'displays the singular values of the data, from greatest'
+            ' to least and shows the vector corresponding to the '
+            'absolute greatest singular value',
+            'prints the coefficents of the least squares linear fit of'
+            ' the data where column \'n\' is the dependent/response'
+            ' variable. This also prints the RSS of the model and the'
+            ' Fraction-of-Variance-Explained.',
+            'Assuming column \'n\' is the dependent/response variable'
+            ' and the other columns are the independent/predictor'
+            ' variables, this runs lasso minimization for a range of t'
+            ' between 0 and the largest absolute value in transpose'
+            ' X*Y. This also prints a graph of how the coefficients'
+            ' vary with t and a graph of the Fraction of Variance'
+            ' Explained, this returns the linear model given by lasso'
+            ' at a t= T.'
+            ]
+
+    helpmessage = 'This is a program to analyze large sets of data and'
+    ' contains different tools to help with this. To efficiently and'
+    ' accurately use this tool you must have a data set'
+    ' (mydata.extension) and know which column to use as a'
+    ' dependent/response variable (i.e. column = n) \n \n'
+
     print(helpmessage)
     for i in range(4):
         print("{0:<10} {1:>8} \n".format(UsageList[i], Descrip[i]))
     return
 
 def F(M, t):
-    ''' The function which will be minimized over lasso in terms of M and t '''
+    '''
+        The function which will be minimized over lasso in terms of M and t
+        Args:                   Parameters
+             M      np.ndarray(matrix of observations)
+             t              int(weight constant)
+        Returns:
+             .5*RSS(M,X,Y)+t*np.linalg.norm(M,1)
+    '''
     return .5*RSS(M,X,Y)+t*np.linalg.norm(M,1)
 
 
 def RSS(M, X, Y):
     '''
-    The RSS formula. Essentially, residual transposed times residual. The only careful bit in here
-    is that numpy likes to switch column vectors to row vectors (or vice versa) and so it is
-    necessary to reset the rows of M to equal the columns of X, and to set the shape of X.dot(M)
-    equal to Y so they can be subtracted from one another.
+        Returns RSS of M by X and Y
+        Args:                   Parameters
+             M      np.ndarray(matrix of observations)
+             X      np.ndarray(first matrix of observs)
+             Y      np.ndarray(2nd matrix of observs.)
+        Returns:
+            <(Y-X*M).T, Y-X*M>
     '''
     M.shape = (X.shape[1],)
     XM = X.dot(M)
@@ -63,25 +113,37 @@ def RSS(M, X, Y):
 
 
 def MM(X,Y):
-    ''' finding M in the quickest way that we know -- linear least squares regression '''
+    '''
+        Least Squares Regression Algorithm
+        Args:                   Parameters
+             X      np.ndarray(first matrix of observs)
+             Y      np.ndarray(2nd matrix of observs.)
+        Returns:
+            <X.T, X> = a*<X.T, Y> (Solves for vector a)
+    '''
     return la.solve(X.T.dot(X), X.T.dot(Y))
 
 def covar(W):
     '''
-    The Covariance of the matrix. This measures how correlated the data is to each other.
-    Essentially it shows how much the data is pointing in each direction, normalized by the
-    amount of data.
+        Returns covariance matrix; measures data correlation
+        Args:                   Parameters
+             W      np.ndarray(all observations)
+        Returns:
+            <W.T, W>/W.rows
     '''
     return (W.T.dot(W))/(len(W[0])-1)
 
 
 def fit(X,Y):
     '''
-    Computes the model of best fit, the absolutely most accurate model, with the fraction of
-    variance. The fraction of variance tells us a percentage of how much this model actually
-    varies from the independent variable
+        Best fit model for data
+        Args:                   Parameters
+             X      np.ndarray(first matrix of observs)
+             Y      np.ndarray(2nd matrix of observs)
+        Returns:
+            least squares, residual least squares, variance of data
+            MM(X,Y)         <(Y-<X,(MM)>,Y-<X,MM>> (<Y.T,Y>-RLS)/<Y.T,Y>
     '''
-
     print('Computing RSS...')
     Mx = MM(X,Y)
     RSSM = ((Y-X.dot(Mx)).T).dot(Y-X.dot(Mx))
@@ -93,13 +155,12 @@ def fit(X,Y):
 
 def pca(W):
     '''
-    Delivers the eigenvalues and eigenvectors in reversed order (which is greatest to least).
-    The eigenvalues deliver the variance of the matrix in scalar form. That is,
-    (lambda*I-A)v=0 where lambda is the eigenvalue. Moreover, Av=(lambda)v. Thus, the eigenvalues
-    we are given are that which turn the matrix of data into a vector. Although, as we will see
-    later on, this only accounts for the largest eigenvalue.
+        Principal Component Analysis on matrix of observations
+        Args:                   Parameters
+             W      np.ndarray(matrix of observs)
+        Returns:
+            Eigenvalues, Eigenvectors
     '''
-
     cov = covar(W)
     print('Computing Eigenvalues and Eigenvectors...')
     Deigs, Deigsv = la.eigh(cov)
@@ -110,13 +171,14 @@ def pca(W):
 
 def lasso(X,Y,t):
     '''
-    lasso calculates the same thing as fit except that it does so while adjusting for complexity
-    of equation. The t constraint allows for the function to weight the individual variables more.
-    As t becomes greater, the norm becomes greater, and the largest variables become more
-    important than the others. As t approaches 0, the function optimizes towards the RSS function.
-    This function also outputs the fraction of variance between the minimzed function and the data
+        Lasso algorithm (essentially weighting PCA by different norms)
+        Args:                   Parameters
+            X      np.ndarray(first matrix of observs)
+            Y      np.ndarray(2nd matrix of observs)
+            t                   int(weight)
+        Returns:
+            Minimum of lasso, Fraction of Variance
     '''
-
     Min = (opt.minimize(lambda M: .5*RSS(M, X,Y)[0,0]+t*np.linalg.norm(M,1), np.zeros(shape=(X.shape[1])))).x
     RSSLasso = RSS(Min, X,Y)
     LassoFrac = (Y.T.dot(Y)-RSSLasso)/(Y.T.dot(Y))
@@ -124,17 +186,17 @@ def lasso(X,Y,t):
 
 def lasso_step(X,Y,bifurcations=20):
     '''
-    When iterating it is necessary to have a close guess as to what the highest t is. Otherwise
-    there are far too many t's to try that could be far beyond the scope of the problem. This
-    function bounces back and forth between one possible tmax and another, each time drawing
-    closer to the actual tmax.
-    The previous resolution (1/(2^(-10))) was too small so I had to pump it up to
-    (1/(2^(-20))). At the previous resolution TMax was off by 88 (~.25%).
+        Helper function for iterating on the lasso algorithm guesses
+        highest t value instead of random guessing
+        Args:                   Parameters
+            X      np.ndarray(first matrix of observs)
+            Y      np.ndarray(2nd matrix of observs)
+            bifurcations        int(20 | number of splits)
+        Returns:
+            Optimal t-value
     '''
-
     TLeft = 0.0
     TRight = np.max(np.abs(X.T.dot(Y)))
-    Traj = []
     for i in range(bifurcations):
         TMid = (TLeft+TRight)/2.0
         try:
@@ -152,15 +214,23 @@ def lasso_step(X,Y,bifurcations=20):
 
 def center(Array):
     '''
-    Centers the array about the mean of the data so that there is no need to compute larger
-    numbers than necessary.
+        Centers the array about the mean of the data
+        Args:                   Parameters
+            Array   np.ndarray(matrix of observs)
     '''
-
     Mean = Array - np.mean(Array, axis=0)
     return Mean # after subracting the means
 
 def lasso_plot(tList, MList, name, tname='_', mname='_'):
-    ''' Plots and saves a graph based on the given inputs of t and M.'''
+    '''
+        Plots and saves a graph based on the given inputs of t and M.
+        Args:                   Parameters
+             tList  np.ndarray(list of t values)
+             MList  np.ndarray(list of M vectors)
+             name           str(Graph file name)
+             tname          str(X axis name)
+             mname          str(Y axis name)
+    '''
 
     print('Plotting {0}...'.format(name))
     plt.plot(tList, MList, label='m_{0}'.format(i))
@@ -175,7 +245,13 @@ def lasso_plot(tList, MList, name, tname='_', mname='_'):
     return
 
 def OneLasso(X,Y,TT):
-    ''' in the event that the user only wants the lasso minimization at a certain t '''
+    '''
+        lasso minimization at a certain t
+        Args:                   Parameters
+            X      np.ndarray(first matrix of observs)
+            Y      np.ndarray(2nd matrix of observs)
+            TT                  int(t value)
+    '''
     Model = lasso(X,Y,TT)[0]
     FullModel = DisplayEq(Model)
     print('The linear model given by lasso at t = {0} is: \n f(x)={1}'.format(TT,FullModel))
@@ -183,8 +259,11 @@ def OneLasso(X,Y,TT):
 
 def DisplayEq(Model):
     '''
-    This is the function used to nicely display pca or OneLasso results in the form of an
-    equation. It takes inputs in a list, addendums a variable and then makes that equal to f(x)
+        Outputs an equation for the lasso algorithm or PCA
+        Args:                   Parameters
+             Model      np.ndarray(pca or lasso)
+        Returns:
+            C_1*x^n + C_2*x^(n-1) + ... + C_n*x^0
     '''
     if type(Model[0]) == np.ndarray:
         Equation = [str(Model[i][0])+'x_'+str(i) for i in range(len(Model))]
@@ -201,8 +280,12 @@ def DisplayEq(Model):
 
 def PlotAndExplain(X,Y,TMax,filename):
     '''
-    This function iterates over the lasso minimization from t=0 up to t=tmax in steps
-    of 20. As well, it also plots the function nicely at the end.
+        Iterates lasso (bifurcations=20), outputs formula and then
+        plots the functions
+        Args:                   Parameters
+            X      np.ndarray(first matrix of observs)
+            Y      np.ndarray(2nd matrix of observs)
+            TMax            int(Max. t value)
     '''
     addName = re.split('\W+', filename)
     NAME = '_' + addName[len(addName)-2]
@@ -214,9 +297,11 @@ def PlotAndExplain(X,Y,TMax,filename):
         tlist.append(t)
         try:
             m, frac = lasso(X,Y,t)
-        #In the case that the matrices do not align, numpy raises a ValueError
+        #In the case that the matrices do not align, numpy raises ValueError
         except ValueError:
-            print('If t is too large (in this case, t{0}) then there is a matrix error. This is what just happened. As a result, the graph may flatline at the end slightly.'.format(t))
+            print('If t is too large (in this case, t{0}) then'.format(t)
+            ' there is a matrix error. This is what just happened. As a'
+            ' result, the graph may flatline at the end slightly.')
             pass
         mlist.append(m)
         fracList.append(frac[0])
@@ -228,7 +313,7 @@ def PlotAndExplain(X,Y,TMax,filename):
 
 if __name__ == '__main__':
 
-    #try to open the data file. If it can't open then it repeats the help function and tells you why it isn't opening
+    #try to open the data file.
     try:
         data_file = open(sys.argv[1])
     except IndexError:
@@ -241,9 +326,7 @@ if __name__ == '__main__':
     ValGiven = True
     row, columns = W.shape
 
-    # The try block is used so that, in the case of PCA, there is no need to split the data
-    # up or do anything with it. Else, if not going through pca, the code will execute
-    # normally and not go through the exception.
+    # in the case of PCA, there is no need to split the data up
     try:
         dum = int(sys.argv[3])
         xIndex = [True] *columns
@@ -251,7 +334,7 @@ if __name__ == '__main__':
         xSelect = np.array(xIndex)
         ySelect = np.array([not i for i in xSelect])
 
-    # Split into X and Y (Dependent and Independent respectively
+    # Split into X and Y (Dependent and Independent respectively)
         Y = np.array(W[:, ySelect])
         X = np.array(W[:, xSelect])
     except IndexError:
@@ -268,11 +351,12 @@ if __name__ == '__main__':
                 AllMs += str(M[i][0]) +', '
             else:
                 AllMs += str(M[i][0])
-        print("The linear best fit model is: \n f(x)={0} \n".format(FullModel))
+        print("The linear best fit model is: \n f(x)={0} \n".format(
+                                                            FullModel))
         print("The fractional variance is {0}".format(frac[0][0]))
         print("\n The RSS of this model is {0}".format(AllMs))
 
-    # Going through pca and computing the singular values and then outputting them as
+    # Going through pca -- the singular values then outputting them as
     # strings with the largest singular value associated with its eigenvector
     elif sys.argv[2] == "pca" and ValGiven == False:
         eigs, eigsvec = pca(W)
@@ -284,12 +368,12 @@ if __name__ == '__main__':
             else:
                 svdStr+=str(svds[i]) +', '
         print('The largest Singular Value is: {0} \n'.format(svds[0]))
-        print('The vector associated with this value is: \n {0} \n'.format(eigsvec[0]))
+        print(
+        'The vector associated with this value is: \n {0} \n'.format(
+                                                            eigsvec[0]))
         print('\nThe list of Singular Values is:\n{0} \n'.format(svdStr))
 
-    # Go through lasso. In the case that there is a fourth system argument then it will run
-    # through lasso once. Else it will output the graphs associated with going through lasso
-    # to find the minimization.
+    # Go through lasso. if fourth sysarg then lasso once else graph
     elif sys.argv[2] == "lasso" and ValGiven == True:
         try:
             TT = float(sys.argv[4])
