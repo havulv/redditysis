@@ -1,19 +1,35 @@
 #!/usr/bin/python
 
-#Switching to urlib2 from lxml because lxml is shit for some reason.
+'''
+    Short module for saving reddit data as a csv.
+    Consider moving to mp_scrape because the file length is small and
+    there is only only one function.
+
+    TO DO:
+        logging
+        unittesting
+        updated documentation
+'''
 
 import os
-import time
 import re
 import csv
 import requests
 from BeautifulSoup import BeautifulSoup
-
+from datetime import datetime as dt
 
 SearchPages = [ ("http://www.reddit.com/r/all", 'all', {}), ("http://www.reddit.com/r/all/top", 'all/top', {}), ("http://www.reddit.com/r/indieheads", 'indieheads', {}), ("http://www.reddit.com/r/hiphopheads", 'hiphopheads', {})]
 
 
 def get_page_data(url):
+    '''
+        Retrieve page_data from a reddit subreddit url. If anything
+        other than a 200 code, raises HTTPError. Saves the resulting
+        data within a file named after the subreddit in Redd_data
+        EX: ({subreddit}_data.csv)
+        Args:  arg          param
+               url     str(subreddit url)
+    '''
     end_tag = re.compile('[^/]+(?=/$|$)')
     fname = end_tag.match(url)
     hdr = {'User-Agent' : 'Looking for content by /u/Sea_Wulf'}
@@ -34,22 +50,23 @@ def get_page_data(url):
             pass
         else:
             item = articles.find('p', {"class" : "title"})
-            page_data.append(int(rank.string),
+            page_data.append((
+            dt.utcnow(),
+            int(rank.string),
             int(vote.find('div', {"class" : "score unvoted"}).string),
             item.find('a').string,
             item.find('a').get('href'),
-            item.find('span', {"class": "domain"}).find('a').get('href'))
+            item.find('span', {"class": "domain"}).find('a').get('href')))
 
-    fpath = os.path.join(os.path.dirname(os.gecwd()), 'Redd_data')
-    f_name = os.path.join(fpath,fname+"_data.json")
+    fpath = os.path.join(os.path.dirname(os.getcwd()), 'Redd_data')
+    f_name = os.path.join(fpath,fname+"_data.csv")
     head = re.compile("(Rank)")
     with open(f_name, "rb") as check_head:
         first = check_line.readline()
 
-    save = csv.writer(open(f_name, "ab"))
+    to_save = open(f_name, "ab")
+    save = csv.writer(to_save)
     if not head.match(first):
-        save.writerow(["Rank", "Votes", "Title", "Link",
-    save.write("\n"+time.asctime()+"\n")
-    save.write(json.dumps(SearchPages))
-
-
+        save.writerow(["Time", "Rank", "Votes", "Title", "Link", "Domain"])
+    save.writerows(page_data)
+    to_save.close()
