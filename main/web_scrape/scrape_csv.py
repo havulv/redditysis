@@ -15,7 +15,7 @@ import os
 import re
 import csv
 import requests
-from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 from datetime import datetime as dt
 
 SearchPages = [ ("http://www.reddit.com/r/all", 'all', {}), ("http://www.reddit.com/r/all/top", 'all/top', {}), ("http://www.reddit.com/r/indieheads", 'indieheads', {}), ("http://www.reddit.com/r/hiphopheads", 'hiphopheads', {})]
@@ -47,6 +47,7 @@ def get_page_data(url):
         vote = row.find('div', {"class": "midcol unvoted"})
         articles = row.find('div', {"class": "entry unvoted"})
         if articles == None:
+
             pass
         else:
             item = articles.find('p', {"class" : "title"})
@@ -55,9 +56,10 @@ def get_page_data(url):
             int(rank.string),
             int(vote.find('div', {"class" : "score unvoted"}).string),
             '\"'+item.find('a').string+'\"',
-            '\"'+item.find('a').get('href')'\"',
-            '\"'+item.find('span', {"class": "domain"}).find('a').get('href')
-                                                                        +'\"'))
+            '\"'+item.find('a').get('href')+'\"',
+            '\"'+item.find('span',
+                {"class": "domain"}).find('a').get('href') +'\"'
+            ))
 
     fpath = os.path.join(os.path.dirname(os.getcwd()), 'Redd_data')
     f_name = os.path.join(fpath,fname+"_data.csv")

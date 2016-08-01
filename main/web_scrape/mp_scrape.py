@@ -2,10 +2,12 @@
 
 
 import logging
-from scrape2json.py import get_page_data
+from scrape_csv import get_page_data
 import multiprocessing as mp
 
-logging.basicConfig(filename="redditscrape.log", format="[%(levelname)s];[%(name)s] -- %(asctime)s: %(message)s")
+logging.basicConfig(
+        filename="redditscrape.log",
+        format="[%(levelname)s];[%(name)s] -- %(asctime)s: %(message)s")
 
 
 def multi_req(urls):
