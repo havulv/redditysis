@@ -10,7 +10,6 @@
         unittesting
         updated documentation
 '''
-import praw
 import logging as log
 import os, re, csv, time, sys
 import requests
@@ -23,25 +22,17 @@ log.basicConfig(
         format="[%(levelname)s];[%(name)s] -- %(asctime)s: %(message)s"
         )
 
-SearchPages = [ ("http://www.reddit.com/r/all", 'all', {}), ("http://www.reddit.com/r/all/top", 'all/top', {}), ("http://www.reddit.com/r/indieheads", 'indieheads', {}), ("http://www.reddit.com/r/hiphopheads", 'hiphopheads', {})]
-
-
-def get_page_data(url):
+def get_page(url):
     '''
-        Retrieve page_data from a reddit subreddit url. If anything
-        other than a 200 code, raises HTTPError. Saves the resulting
-        data within a file named after the subreddit in Redd_data
-        EX: ({subreddit}_data.csv)
-        Args:  arg          param
-               url     str(subreddit url)
+        Get url for a subreddit
+        Args:                   Parameter
+             url        str(https://reddit.com/r/{subreddit})
+        Returns:
+             req.text           html
     '''
-    end_tag = re.compile('[^/]+(?=/$|$)')
-    word_split = re.compile('\W+')
-    fname = end_tag.search(url).group(0)
-    page_data = []
     u_agent = {
         'User-Agent' : ('Data sampling :: '
-            'github.com/jandersen7/redditysis (by /u/Sea_Wulf)')
+        'github.com/jandersen7/redditysis (by /u/Sea_Wulf)')
         }
     log.info("Sending Get Request to {}".format(url))
     req = requests.get(url, headers=u_agent)
@@ -62,38 +53,56 @@ def get_page_data(url):
                                                             ))
         raise requests.exceptions.HTTPError
     log.info("Status Code 200")
-    soup = BeautifulSoup(req.text, "html.parser")
-    Content = soup.find("div", {"id":"siteTable"})
+    return req.text
 
-    for row in Content:
-        if row['class'][0] not in ['clearleft', 'nav-buttons']:
-            try:
-                date = row.find_all('time')[0].attrs['datetime']
-                date = date[:len(date)-3]+date[-2:]
-                timestamp = dt.strptime(date, "%Y-%m-%dT%H:%M:%S%z")
-                votes = int(row.find_all(
-                        'div',
-                        {'class' : 'score unvoted'}
-                        )[0].string)
-                author = row.attrs['data-author']
-                subreddit = row.attrs['data-subreddit']
-                rank = int(row.attrs['data-rank'])
-                data_type = row.attrs['data-type']
-                data_domain = row.attrs['data-domain']
-                a_attrs = row.find_all('a')
-                if a_attrs[0].string == None:
-                    a_attrs[0] = a_attrs[1]
-                title = '\"' + a_attrs[0].string + '\"'
-                comments = int(word_split.split(a_attrs[-2].string)[0])
+def get_tags(row):
+    '''
+        Clean html for data
+        Args:                   Parameter
+             row            Beautiful Soup tag element
+        Returns:
+             data               list(data)
+    '''
+    word_split = re.compile('\W+')
+    try:
+        date = row.find_all('time')[0].attrs['datetime']
+        date = date[:len(date)-3]+date[-2:]
+        timestamp = dt.strptime(date, "%Y-%m-%dT%H:%M:%S%z")
+        votes = int(row.find_all(
+                'div',
+                {'class' : 'score unvoted'}
+                )[0].string)
+        author = row.attrs['data-author']
+        subreddit = row.attrs['data-subreddit']
+        rank = int(row.attrs['data-rank'])
+        data_type = row.attrs['data-type']
+        data_domain = row.attrs['data-domain']
+        a_attrs = row.find_all('a')
+        if a_attrs[0].string == None:
+            a_attrs[0] = a_attrs[1]
+        title = '\"' + a_attrs[0].string + '\"'    '''
+        Get url for a subreddit
+        Args:                   Parameter
+             url        str(https://reddit.com/r/{subreddit})
+    '''
+        comments = int(word_split.split(a_attrs[-2].string)[0])
+        return [
+            timestamp, votes, author, subreddit, rank,
+            data_type, data_domain, title, comments,
+            ]
+    except KeyError:
+        log.info("Hit upon a row without any data {0}")
+        pass
 
-                page_data.append([
-                    timestamp, votes, author, subreddit, rank,
-                    data_type, data_domain, title, comments,
-                    ])
-            except KeyError:
-                log.info("Hit upon a row without any data {0}")
-                pass
-
+def save_csv(fname, page_data):
+    '''
+        Save data to a csv of filename fname_data.csv
+        Args:                   Parameter
+             fname              str(fname)
+             page_data      list(list(data))
+        Returns:
+             None
+    '''
     fpath = os.path.join(os.path.dirname(os.getcwd()), 'Redd_data')
     f_name = os.path.join(fpath,fname+"_data.csv")
     head = re.compile("(Rank)")
@@ -118,3 +127,24 @@ def get_page_data(url):
     save.writerows(page_data)
     to_save.close()
     log.info("--- Closing File ---")
+
+def get_page_data(url):
+    '''
+        Retrieve page_data from a reddit subreddit url. If anything
+        other than a 200 code, raises HTTPError. Saves the resulting
+        data within a file named after the subreddit in Redd_data
+        EX: ({subreddit}_data.csv)
+        Args:  arg          param
+               url     str(subreddit url)
+    '''
+    soup = BeautifulSoup(get_page(url), "html.parser")
+    Content = soup.find("div", {"id":"siteTable"})
+
+    page_data = []
+    for row in Content:
+        if row['class'][0] not in ['clearleft', 'nav-buttons']:
+            page_data.append(get_tags(row))
+
+    end_tag = re.compile('[^/]+(?=/$|$)')
+    fname = end_tag.search(url).group(0)
+    save_csv(fname, page_data)
