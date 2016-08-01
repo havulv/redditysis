@@ -81,13 +81,14 @@ def get_page_data(url):
                 data_type = row.attrs['data-type']
                 data_domain = row.attrs['data-domain']
                 a_attrs = row.find_all('a')
-                print(a_attrs)
+                if a_attrs[0].string == None:
+                    a_attrs[0] = a_attrs[1]
                 title = '\"' + a_attrs[0].string + '\"'
                 comments = int(word_split.split(a_attrs[-2].string)[0])
 
                 page_data.append([
                     timestamp, votes, author, subreddit, rank,
-                    data_type, data_domain, a_attrs, title, comments,
+                    data_type, data_domain, title, comments,
                     ])
             except KeyError:
                 log.info("Hit upon a row without any data {0}")
@@ -97,18 +98,18 @@ def get_page_data(url):
     f_name = os.path.join(fpath,fname+"_data.csv")
     head = re.compile("(Rank)")
     log.info("Checking for existing header in file")
-    first = b""
+    first = ""
     try:
-        with open(f_name, "rb") as check_head:
+        with open(f_name, "r", encoding="utf-8") as check_head:
             first = check_head.readline()
     except FileNotFoundError:
-        n_file = open(f_name, "w+b")
+        n_file = open(f_name, "w+")
         n_file.close()
 
     log.info("--- Writing to file ---")
-    to_save = open(f_name, "a", encoding='utf-16', newline='')
+    to_save = open(f_name, "a", encoding='utf-8', newline='')
     save = csv.writer(to_save)
-    if not head.match(first.decode("ascii")):
+    if not head.search(first):
         log.info("Writing Header")
         save.writerow([
             "Time", "Votes", "Author", "Subreddit", "Rank",
