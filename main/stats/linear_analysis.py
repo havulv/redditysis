@@ -73,11 +73,13 @@ def Help():
             ' at a t= T.'
             ]
 
-    helpmessage =('This is a program to analyze large sets of data and'
+    helpmessage =(
+    'This is a program to analyze large sets of data and'
     ' contains different tools to help with this. To efficiently and'
     ' accurately use this tool you must have a data set'
     ' (mydata.extension) and know which column to use as a'
-    ' dependent/response variable (i.e. column = n) \n \n')
+    ' dependent/response variable (i.e. column = n) \n \n'
+    )
 
     print(helpmessage)
     for i in range(4):
@@ -302,9 +304,11 @@ def PlotAndExplain(X,Y,TMax,filename):
             m, frac = lasso(X,Y,t)
         #In the case that the matrices do not align, numpy raises ValueError
         except ValueError:
-            print(('If t is too large (in this case, t{0}) then there'
+            print((
+            'If t is too large (in this case, t{0}) then there'
             'is a matrix error. This is what just happened. As a result'
-            ', the graph may flatline at the end slightly.'.format(t)))
+            ', the graph may flatline at the end slightly.'.format(t))
+            )
             pass
         mlist.append(m)
         fracList.append(frac[0])
@@ -324,7 +328,8 @@ if __name__ == '__main__':
         Help()
         raise Exception((
             'Please use a valid filename with a valid extension '
-            '(i.e. .csv, .txt, etc.)'))
+            '(i.e. .csv, .txt, etc.)'
+            ))
 
     #Centers the data and chooses the independent variable
     raw_data = np.loadtxt(data_file)
