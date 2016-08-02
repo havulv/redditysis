@@ -42,10 +42,7 @@ import matplotlib.pyplot as plt
 import scipy.optimize as opt
 
 def Help():
-    '''
-    A nice help message to help the user if they screw up the input
-    '''
-
+    ''' A nice help message to help the user if they screw up the input'''
     name = './linear_analysis.py'
     UsageList = [
             name,
@@ -97,7 +94,6 @@ def F(M, t):
     '''
     return .5*RSS(M,X,Y)+t*np.linalg.norm(M,1)
 
-
 def RSS(M, X, Y):
     '''
         Returns RSS of M by X and Y
@@ -113,13 +109,12 @@ def RSS(M, X, Y):
     XM.shape = Y.shape
     return ((Y-XM).T).dot(Y-XM)
 
-
 def MM(X,Y):
     '''
         Least Squares Regression Algorithm
         Args:                   Parameters
-             X      np.ndarray(first matrix of observs)
-             Y      np.ndarray(2nd matrix of observs.)
+             X      np.ndarray(independent)
+             Y      np.ndarray(dependent)
         Returns:
             <X.T, X> = a*<X.T, Y> (Solves for vector a)
     '''
@@ -134,7 +129,6 @@ def covar(W):
             <W.T, W>/W.rows
     '''
     return (W.T.dot(W))/(len(W[0])-1)
-
 
 def fit(X,Y):
     '''
@@ -154,7 +148,6 @@ def fit(X,Y):
     frac = (Y.T.dot(Y)-RSSM)/(Y.T.dot(Y))
     return Mx,RSSM,frac
 
-
 def pca(W):
     '''
         Principal Component Analysis on matrix of observations
@@ -169,7 +162,6 @@ def pca(W):
     eigs = np.array(list(reversed(Deigs)))
     eigsv = np.array(list(reversed(Deigsv)))
     return eigs, eigsv
-
 
 def lasso(X,Y,t):
     '''
@@ -280,8 +272,6 @@ def DisplayEq(Model):
         else:
             FullModel+= Equation[i]
     return FullModel
-
-
 
 def PlotAndExplain(X,Y,TMax,filename):
     '''
