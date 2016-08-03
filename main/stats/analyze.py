@@ -1,13 +1,12 @@
 #!/usr/bin/python3
 
-import csv
-from linear_analysis.py import *
+import re, csv, os
+from linear_analysis import *
 import numpy as np
 
 def words_list(words):
     ''' Args: string Returns: regex list of words in string '''
-    reg = re.compile("\W+")
-    return list(filter(lambda x: x is not "", reg.split(words)))
+    return list(filter(lambda x: x is not "", re.split('\W+',words)))
 
 def read_csv(fname):
     '''
@@ -26,8 +25,9 @@ def read_csv(fname):
     fpath = os.path.join(os.path.dirname(os.getcwd()), 'Redd_data')
     fname = os.path.join(fpath, fname+"_data.csv")
 
-    red_file = open(fname, 'rb')
-    red_csv = csv.reader(red_file)
+    red_file = open(fname, 'r', newline='')
+    red_csv = csv.reader(red_file, delimiter=",")
+    red_csv.__next__()
     times = [row[0] for row in red_csv]
     ranks = [row[1] for row in red_csv]
     votes = [row[2] for row in red_csv]
@@ -38,3 +38,36 @@ def read_csv(fname):
 
     return times, ranks, votes, titles, links, domains
 
+def percent_from_avg(val_list):
+    ''' Returns the percentage distance from the avg for each value '''
+    return [(1-(i/(sum(val_list)/len(val_list)))) for i in val_list]
+
+def domain_filter(domains, dom_filter):
+    ''' Filters for dom_filter based on a list of domains/users/subreddit'''
+    return [1 if dom == dom_filter else 0 for dom in domains]
+
+def str_relation_matrix(titles, votes, ranks):
+    ''' lasso algorithm on string length and votes '''
+    raw_data = np.array([
+        [len(words_list(i)) for i in titles],
+        [int(i) for i in votes],
+        [int(i) for i in ranks]
+        ])
+    W = np.array(center(raw_data))
+    W = W.T
+    xSelect = [True]*W.shape[1]
+    xSelect[2] = False
+    X = np.array(W[:, np.array(xSelect)])
+    Y = np.array(W[:, np.array([not i for i in xSelect])])
+    TMax = lasso_step(X,Y)
+    TMax = 2000 if TMax < 20 else TMax
+    PlotAndExplain(X,Y, np.int(TMax), "title length and such")
+    return
+
+def main():
+    ''' main function (Still testing the kinks) '''
+    time, rank, vote, title, link, domain = read_csv('all')
+    str_relation_matrix(title, vote, rank)
+
+if __name__ == "__main__":
+    main()

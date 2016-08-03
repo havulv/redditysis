@@ -2,7 +2,7 @@
 
 from requests.exceptions import HTTPError
 import logging
-from scrape_csv import get_page_data
+from .scrape_csv import get_page_data
 import multiprocessing as mp
 
 logging.basicConfig(

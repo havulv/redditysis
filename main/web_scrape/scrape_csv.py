@@ -31,7 +31,7 @@ def get_page(url):
              req.text           html
     '''
     u_agent = {
-        'User-Agent' : ('Data sampling :: '
+        'User-Agent' : ('Data sampling'
         'github.com/jandersen7/redditysis (by /u/Sea_Wulf)')
         }
     log.info("Sending Get Request to {}".format(url))
@@ -64,11 +64,12 @@ def get_tags(row):
              data               list(data)
     '''
     word_split = re.compile('\W+')
+    screen = lambda x: int(x) if x.isdigit() else 0
     try:
         date = row.find_all('time')[0].attrs['datetime']
         date = date[:len(date)-3]+date[-2:]
         timestamp = dt.strptime(date, "%Y-%m-%dT%H:%M:%S%z")
-        votes = int(row.find_all(
+        votes = screen(row.find_all(
                 'div',
                 {'class' : 'score unvoted'}
                 )[0].string)
@@ -80,11 +81,7 @@ def get_tags(row):
         a_attrs = row.find_all('a')
         if a_attrs[0].string == None:
             a_attrs[0] = a_attrs[1]
-        title = '\"' + a_attrs[0].string + '\"'    '''
-        Get url for a subreddit
-        Args:                   Parameter
-             url        str(https://reddit.com/r/{subreddit})
-    '''
+        title = '\"' + a_attrs[0].string + '\"'
         comments = int(word_split.split(a_attrs[-2].string)[0])
         return [
             timestamp, votes, author, subreddit, rank,
@@ -103,7 +100,7 @@ def save_csv(fname, page_data):
         Returns:
              None
     '''
-    fpath = os.path.join(os.path.dirname(os.getcwd()), 'Redd_data')
+    fpath = os.path.join(os.path.dirname(os.getcwd()), 'main/Redd_data')
     f_name = os.path.join(fpath,fname+"_data.csv")
     head = re.compile("(Rank)")
     log.info("Checking for existing header in file")
