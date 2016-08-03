@@ -83,7 +83,7 @@ def Help():
 
     print(helpmessage)
     for i in range(4):
-        print("{0:<10} {1:>8} \n".format(UsageList[i], Descrip[i]))
+        print("{0:<10} \n\t--{1:>8} \n".format(UsageList[i], Descrip[i]))
     return
 
 def F(M, t):
@@ -96,7 +96,6 @@ def F(M, t):
              .5*RSS(M,X,Y)+t*np.linalg.norm(M,1)
     '''
     return .5*RSS(M,X,Y)+t*np.linalg.norm(M,1)
-
 
 def RSS(M, X, Y):
     '''
@@ -112,7 +111,6 @@ def RSS(M, X, Y):
     XM = X.dot(M)
     XM.shape = Y.shape
     return ((Y-XM).T).dot(Y-XM)
-
 
 def MM(X,Y):
     '''
@@ -135,7 +133,6 @@ def covar(W):
     '''
     return (W.T.dot(W))/(len(W[0])-1)
 
-
 def fit(X,Y):
     '''
         Best fit model for data
@@ -154,7 +151,6 @@ def fit(X,Y):
     frac = (Y.T.dot(Y)-RSSM)/(Y.T.dot(Y))
     return Mx,RSSM,frac
 
-
 def pca(W):
     '''
         Principal Component Analysis on matrix of observations
@@ -169,7 +165,6 @@ def pca(W):
     eigs = np.array(list(reversed(Deigs)))
     eigsv = np.array(list(reversed(Deigsv)))
     return eigs, eigsv
-
 
 def lasso(X,Y,t):
     '''
@@ -281,8 +276,6 @@ def DisplayEq(Model):
             FullModel+= Equation[i]
     return FullModel
 
-
-
 def PlotAndExplain(X,Y,TMax,filename):
     '''
         Iterates lasso (bifurcations=20), outputs formula and then
@@ -298,7 +291,7 @@ def PlotAndExplain(X,Y,TMax,filename):
     mlist = []
     fracList = []
     print("Computing Fraction of variance and M as it approaches TMax...")
-    for t in range(0, int(TMax)-1, int(TMax)/20):
+    for t in range(0, np.int(TMax)-1, np.int(TMax/20)):
         tlist.append(t)
         try:
             m, frac = lasso(X,Y,t)
@@ -319,17 +312,18 @@ def PlotAndExplain(X,Y,TMax,filename):
 
 
 if __name__ == '__main__':
-
+    #FIXME: Transition agrument handling into main()
     #try to open the data file.
     try:
         data_file = open(sys.argv[1])
         data_file.close()
-    except IndexError:
-        Help()
-        raise Exception((
-            'Please use a valid filename with a valid extension '
+    except IndexError as e:
+        print((
+            '\nPlease use a valid filename with a valid extension '
             '(i.e. .csv, .txt, etc.)'
             ))
+        Help()
+        sys.exit(0)
 
     #Centers the data and chooses the independent variable
     raw_data = np.loadtxt(data_file)
