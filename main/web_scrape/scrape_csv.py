@@ -22,6 +22,13 @@ log.basicConfig(
         format="[%(levelname)s];[%(name)s] -- %(asctime)s: %(message)s"
         )
 
+def screen(func, *args):
+    try:
+        ret_val = func(*args)
+    except ValueError:
+        ret_val = 0
+    return ret_val
+
 def get_page(url):
     '''
         Get url for a subreddit
@@ -64,25 +71,25 @@ def get_tags(row):
              data               list(data)
     '''
     word_split = re.compile('\W+')
-    screen = lambda x: int(x) if x.isdigit() else 0
     try:
         date = row.find_all('time')[0].attrs['datetime']
         date = date[:len(date)-3]+date[-2:]
         timestamp = dt.strptime(date, "%Y-%m-%dT%H:%M:%S%z")
-        votes = screen(row.find_all(
+        votes = screen(int,
+                row.find_all(
                 'div',
                 {'class' : 'score unvoted'}
                 )[0].string)
         author = row.attrs['data-author']
         subreddit = row.attrs['data-subreddit']
-        rank = int(row.attrs['data-rank'])
+        rank = screen(int, row.attrs['data-rank'])
         data_type = row.attrs['data-type']
         data_domain = row.attrs['data-domain']
         a_attrs = row.find_all('a')
         if a_attrs[0].string == None:
             a_attrs[0] = a_attrs[1]
         title = '\"' + a_attrs[0].string + '\"'
-        comments = int(word_split.split(a_attrs[-2].string)[0])
+        comments = screen(int, word_split.split(a_attrs[-2].string)[0])
         return [
             timestamp, votes, author, subreddit, rank,
             data_type, data_domain, title, comments,
