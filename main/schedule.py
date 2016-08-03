@@ -22,11 +22,15 @@ def sched_request(urls, int_time=20, tol=None):
         tol = .25*int_time
         tol = floor(tol) if floor(tol) > 0 else 1
     while True:
-        if abs(cur_time - dt.now().minute) % int_time in range(0, tol):
-            multi_req(urls)
-            time.sleep(int_time*60)
-        else:
-            time.sleep(60)
+        try:
+            if abs(cur_time - dt.now().minute) % int_time in range(0, tol):
+                multi_req(urls)
+                time.sleep(int_time*60)
+            else:
+                time.sleep(60)
+        except KeyboardInterrupt:
+            print("Exiting...")
+            sys.exit(0)
 
 def result_filter(**kwargs): #FIXME: implement filters: in analyze.py
     '''
@@ -66,8 +70,8 @@ def read_subs(*args,**kwargs):
     except KeyError:
         int_time = 20
         tol = None
-    print('Currently scheduled {0} for every {1} min'.format(sub_name,
-                                                            int_time))
+    print('Currently scheduled {0} for every {1} min \n'
+          'Please use ctrl-C to exit'.format(sub_name, int_time))
     sched_request(subs, int_time, tol)
 
 
