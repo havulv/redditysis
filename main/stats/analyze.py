@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 
 import re, csv, os
-from linear_analysis import *
 import numpy as np
 
 def words_list(words):
@@ -46,8 +45,9 @@ def domain_filter(domains, dom_filter):
     ''' Filters for dom_filter based on a list of domains/users/subreddit'''
     return [1 if dom == dom_filter else 0 for dom in domains]
 
+
 def str_relation_matrix(titles, votes, ranks):
-    ''' lasso algorithm on string length and votes '''
+    ''' lasso algorithm on string length and votes (failed--revamp)'''
     raw_data = np.array([
         [len(words_list(i)) for i in titles],
         [int(i) for i in votes],
@@ -70,4 +70,8 @@ def main():
     str_relation_matrix(title, vote, rank)
 
 if __name__ == "__main__":
-    main()
+    try:
+        from linear_analysis import *
+        main()
+    except ImportError:
+        main()
