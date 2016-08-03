@@ -1,5 +1,9 @@
 #!/usr/bin/python3
 
+try:
+    from .linear_analysis import *
+except ImportError:
+    pass
 import re, csv, os
 import numpy as np
 
@@ -62,16 +66,13 @@ def str_relation_matrix(titles, votes, ranks):
     TMax = lasso_step(X,Y)
     TMax = 2000 if TMax < 20 else TMax
     PlotAndExplain(X,Y, np.int(TMax), "title length and such")
-    return
+    return True
 
-def main():
+def main_testing():
     ''' main function (Still testing the kinks) '''
     time, rank, vote, title, link, domain = read_csv('all')
-    str_relation_matrix(title, vote, rank)
+    if str_relation_matrix(title, vote, rank):
+        print("Lasso successful")
 
 if __name__ == "__main__":
-    try:
-        from linear_analysis import *
-        main()
-    except ImportError:
-        main()
+    main_testing()
