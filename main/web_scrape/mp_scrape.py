@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+import sys
+
 from requests.exceptions import HTTPError
 import logging
 from .scrape_csv import get_page_data
@@ -15,8 +17,13 @@ def multi_req(urls):
         try:
             pool.map(get_page_data, urls)
         except HTTPError as e:
-            logging.debug("Error in retrieving data:{}".format(e))
+            logging.debug("Error in retrieving data: {}".format(e))
     return
 
 
+if __name__ == "__main__":
+    subs = sys.argv[1:]
+    if subs:
+        subs = list(filter(lambda x: "reddit.com/" in x, subs))
+        multi_req(subs)
 
