@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 from requests.exceptions import HTTPError
 import time, sys
